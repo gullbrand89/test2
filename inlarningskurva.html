@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="sv"><head><meta charset="utf-8">
+<title>Inlärningskurva</title>
+<style>
+  .viz-root {
+    color-scheme: light;
+    --surface-1:#fcfcfb; --text-primary:#0b0b0b; --text-secondary:#52514e;
+    --text-muted:#767570; --grid:#e6e5e1;
+    --series-1:#2a78d6; --series-2:#eb6834;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--surface-1); color:var(--text-primary);
+    padding:26px 30px; max-width:760px; margin:0 auto;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root {
+      color-scheme: dark;
+      --surface-1:#1a1a19; --text-primary:#fff; --text-secondary:#c3c2b7;
+      --text-muted:#8f8e85; --grid:#2f2f2d;
+      --series-1:#3987e5; --series-2:#d95926;
+    }
+  }
+  :root[data-theme="dark"] .viz-root {
+    color-scheme: dark;
+    --surface-1:#1a1a19; --text-primary:#fff; --text-secondary:#c3c2b7;
+    --text-muted:#8f8e85; --grid:#2f2f2d;
+    --series-1:#3987e5; --series-2:#d95926;
+  }
+  body { margin:0; background:var(--surface-1); }
+  h1 { font-size:17px; font-weight:600; margin:0 0 4px; }
+  h2 { font-size:13px; font-weight:600; margin:26px 0 2px; }
+  p.sub { font-size:12.5px; color:var(--text-secondary); margin:0 0 14px; line-height:1.5; }
+  p.note { font-size:11.5px; color:var(--text-muted); margin:6px 0 0; line-height:1.5; }
+  .legend { display:flex; gap:16px; font-size:12px; color:var(--text-secondary); margin:6px 0 2px; }
+  .legend span { display:flex; align-items:center; gap:6px; }
+  .sw { width:11px; height:11px; border-radius:2px; display:inline-block; }
+  .grid { stroke:var(--grid); stroke-width:1; }
+  .tick { fill:var(--text-muted); font-size:10.5px; }
+  .line { fill:none; stroke-width:2; stroke-linejoin:round; stroke-linecap:round; }
+  .s1 { stroke:var(--series-1); } .s2 { stroke:var(--series-2); }
+  .dash { stroke-dasharray:5 3; }
+  .s1t { fill:var(--text-secondary); } .s2t { fill:var(--text-secondary); }
+  .dlabel { font-size:11px; font-weight:600; }
+  .split { stroke:var(--text-muted); stroke-width:1; stroke-dasharray:2 3; opacity:.65; }
+  .splitlab { fill:var(--text-muted); font-size:9.5px; }
+  .axl { fill:var(--text-muted); font-size:10.5px; }
+  svg { display:block; width:100%; height:auto; }
+  .hit { fill:transparent; }
+  .cross { stroke:var(--text-muted); stroke-width:1; opacity:0; }
+  .tip { position:absolute; pointer-events:none; opacity:0; background:var(--surface-1);
+          border:1px solid var(--grid); border-radius:6px; padding:6px 9px; font-size:11.5px;
+          color:var(--text-primary); box-shadow:0 2px 10px rgba(0,0,0,.12); white-space:nowrap; }
+  .wrap { position:relative; }
+  table { border-collapse:collapse; font-size:11px; width:100%; margin-top:8px; }
+  th,td { text-align:right; padding:3px 6px; border-bottom:1px solid var(--grid); color:var(--text-secondary); }
+  th { color:var(--text-primary); font-weight:600; }
+  details { margin-top:22px; } summary { font-size:12px; color:var(--text-secondary); cursor:pointer; }
+</style></head>
+<body><div class="viz-root">
+
+<h1>Prediktionen förbättras med antalet observationer</h1>
+<p class="sub">Samma signal, olika fasförskjutning och brus. Mätt på 8 hållen-ut
+observationer som modellen aldrig tränats på, om efter varje ny träningsobservation.</p>
+
+<h2>Träffsäkerhet, nästa symbol</h2>
+<div class="legend">
+  <span><i class="sw" style="background:var(--series-1)"></i>rätt nivå</span>
+  <span><i class="sw" style="background:var(--series-2)"></i>rätt nivå och varaktighetsklass</span>
+</div>
+<div class="wrap"><svg viewBox="0 0 620 260" role="img" aria-label="Träffsäkerhet mot antal träningsobservationer">
+
+<line class="grid" x1="46" y1="196.0" x2="606" y2="196.0"/>
+<text class="tick" x="38" y="199.5" text-anchor="end">0.40</text>
+<line class="grid" x1="46" y1="136.0" x2="606" y2="136.0"/>
+<text class="tick" x="38" y="139.5" text-anchor="end">0.60</text>
+<line class="grid" x1="46" y1="76.0" x2="606" y2="76.0"/>
+<text class="tick" x="38" y="79.5" text-anchor="end">0.80</text>
+<line class="grid" x1="46" y1="16.0" x2="606" y2="16.0"/>
+<text class="tick" x="38" y="19.5" text-anchor="end">1.00</text>
+<line class="split" x1="65.0" y1="16" x2="65.0" y2="226"/>
+<text class="splitlab" x="69.0" y="28">BIC-split</text>
+<line class="split" x1="473.1" y1="16" x2="473.1" y2="226"/>
+<text class="splitlab" x="477.1" y="28">BIC-split</text>
+<path class="line s1" d="M 46.0 95.8 L 55.5 106.0 L 65.0 58.1 L 74.5 54.2 L 84.0 52.9 L 93.5 45.8 L 102.9 45.8 L 112.4 39.4 L 121.9 49.5 L 131.4 54.3 L 140.9 42.0 L 150.4 35.2 L 159.9 37.3 L 169.4 37.3 L 178.9 37.5 L 188.4 34.0 L 197.9 35.5 L 207.4 35.8 L 216.8 43.5 L 226.3 37.6 L 235.8 37.7 L 245.3 43.9 L 254.8 35.9 L 264.3 37.7 L 273.8 37.5 L 283.3 43.2 L 292.8 39.9 L 302.3 39.9 L 311.8 36.1 L 321.3 33.0 L 330.7 37.9 L 340.2 32.8 L 349.7 37.3 L 359.2 38.7 L 368.7 32.5 L 378.2 31.9 L 387.7 35.6 L 397.2 31.3 L 406.7 38.2 L 416.2 31.7 L 425.7 31.6 L 435.2 40.4 L 444.6 40.4 L 454.1 36.2 L 463.6 36.4 L 473.1 38.7 L 482.6 39.2 L 492.1 39.1 L 501.6 32.5 L 511.1 38.5 L 520.6 39.4 L 530.1 41.7 L 539.6 37.2 L 549.1 34.1 L 558.5 39.4 L 568.0 41.2 L 577.5 42.3 L 587.0 41.6 L 596.5 40.9 L 606.0 47.2"/>
+<path class="line s2" d="M 46.0 95.8 L 55.5 106.0 L 65.0 152.1 L 74.5 177.9 L 84.0 178.5 L 93.5 145.4 L 102.9 136.5 L 112.4 136.8 L 121.9 145.4 L 131.4 137.8 L 140.9 121.1 L 150.4 118.0 L 159.9 127.1 L 169.4 126.0 L 178.9 122.7 L 188.4 112.8 L 197.9 112.9 L 207.4 113.6 L 216.8 131.3 L 226.3 120.0 L 235.8 119.8 L 245.3 124.3 L 254.8 118.3 L 264.3 119.8 L 273.8 123.2 L 283.3 128.7 L 292.8 115.6 L 302.3 114.2 L 311.8 129.6 L 321.3 113.4 L 330.7 131.1 L 340.2 118.8 L 349.7 110.5 L 359.2 110.3 L 368.7 104.5 L 378.2 100.5 L 387.7 115.2 L 397.2 95.2 L 406.7 112.3 L 416.2 98.4 L 425.7 100.7 L 435.2 122.5 L 444.6 119.4 L 454.1 101.4 L 463.6 100.1 L 473.1 103.5 L 482.6 106.7 L 492.1 106.8 L 501.6 101.3 L 511.1 101.4 L 520.6 107.5 L 530.1 124.1 L 539.6 119.0 L 549.1 103.0 L 558.5 104.8 L 568.0 107.1 L 577.5 113.8 L 587.0 112.9 L 596.5 107.7 L 606.0 128.1"/>
+<text class="tick" x="46.0" y="244" text-anchor="middle">1</text>
+<text class="tick" x="131.4" y="244" text-anchor="middle">10</text>
+<text class="tick" x="226.3" y="244" text-anchor="middle">20</text>
+<text class="tick" x="321.3" y="244" text-anchor="middle">30</text>
+<text class="tick" x="416.2" y="244" text-anchor="middle">40</text>
+<text class="tick" x="511.1" y="244" text-anchor="middle">50</text>
+<text class="tick" x="606.0" y="244" text-anchor="middle">60</text>
+<text class="dlabel s1t" x="602.0" y="37.2" text-anchor="end">nivå</text>
+<text class="dlabel s2t" x="602.0" y="144.1" text-anchor="end">symbol</text>
+
+<text class="axl" x="310" y="258" text-anchor="middle">antal träningsobservationer</text>
+<line id="cx1" class="cross" y1="16" y2="226"/>
+<rect class="hit" id="hit1" x="46" y="16" width="560" height="210"/>
+</svg><div class="tip" id="tip1"></div></div>
+<p class="note">Nivåkurvan stiger från 0,73 till som mest 0,95. Symbolkurvan ligger
+lägre av en anledning som inte går att träna bort: varaktigheterna är Poissondragna,
+så vilken antalsklass nästa körning hamnar i är delvis ren slump.</p>
+
+<h2>Perplexitet — hur säker modellen har rätt att vara</h2>
+<div class="legend">
+  <span><i class="sw" style="background:var(--series-1)"></i>interpolerad back-off</span>
+  <span><i class="sw" style="background:var(--series-2)"></i>hård back-off (längsta kontext)</span>
+</div>
+<div class="wrap"><svg viewBox="0 0 620 260" role="img" aria-label="Perplexitet mot antal träningsobservationer">
+
+<line class="grid" x1="46" y1="199.8" x2="606" y2="199.8"/>
+<text class="tick" x="38" y="203.2" text-anchor="end">2</text>
+<line class="grid" x1="46" y1="147.2" x2="606" y2="147.2"/>
+<text class="tick" x="38" y="150.8" text-anchor="end">4</text>
+<line class="grid" x1="46" y1="94.8" x2="606" y2="94.8"/>
+<text class="tick" x="38" y="98.2" text-anchor="end">6</text>
+<line class="grid" x1="46" y1="42.2" x2="606" y2="42.2"/>
+<text class="tick" x="38" y="45.8" text-anchor="end">8</text>
+<line class="split" x1="65.0" y1="16" x2="65.0" y2="226"/>
+<text class="splitlab" x="69.0" y="28">BIC-split</text>
+<line class="split" x1="473.1" y1="16" x2="473.1" y2="226"/>
+<text class="splitlab" x="477.1" y="28">BIC-split</text>
+<path class="line s1" d="M 46.0 206.5 L 55.5 205.9 L 65.0 175.0 L 74.5 165.7 L 84.0 167.6 L 93.5 168.1 L 102.9 169.2 L 112.4 177.0 L 121.9 174.9 L 131.4 176.8 L 140.9 184.9 L 150.4 191.1 L 159.9 190.4 L 169.4 191.3 L 178.9 192.1 L 188.4 191.9 L 197.9 188.9 L 207.4 189.5 L 216.8 187.8 L 226.3 192.0 L 235.8 192.3 L 245.3 184.9 L 254.8 190.9 L 264.3 192.3 L 273.8 192.2 L 283.3 187.7 L 292.8 188.6 L 302.3 188.6 L 311.8 189.8 L 321.3 192.4 L 330.7 188.4 L 340.2 192.4 L 349.7 190.1 L 359.2 189.9 L 368.7 192.7 L 378.2 194.0 L 387.7 190.0 L 397.2 194.3 L 406.7 188.4 L 416.2 195.6 L 425.7 195.6 L 435.2 185.9 L 444.6 185.9 L 454.1 192.4 L 463.6 192.8 L 473.1 188.7 L 482.6 188.9 L 492.1 188.4 L 501.6 189.2 L 511.1 188.7 L 520.6 190.0 L 530.1 186.4 L 539.6 188.8 L 549.1 190.0 L 558.5 191.2 L 568.0 188.3 L 577.5 188.5 L 587.0 188.4 L 596.5 187.8 L 606.0 183.0"/>
+<path class="line s2 dash" d="M 46.0 172.6 L 55.5 194.0 L 65.0 79.3 L 74.5 59.1 L 84.0 49.4 L 93.5 27.4 L 102.9 48.0 L 112.4 102.2 L 121.9 54.0 L 131.4 40.6 L 140.9 100.4 L 150.4 134.7 L 159.9 126.9 L 169.4 134.3 L 178.9 139.7 L 188.4 140.8 L 197.9 129.3 L 207.4 131.0 L 216.8 115.5 L 226.3 141.0 L 235.8 143.7 L 245.3 102.8 L 254.8 139.0 L 264.3 143.4 L 273.8 140.7 L 283.3 130.5 L 292.8 133.3 L 302.3 133.4 L 311.8 122.8 L 321.3 146.8 L 330.7 125.2 L 340.2 146.1 L 349.7 140.5 L 359.2 150.3 L 368.7 157.7 L 378.2 166.4 L 387.7 142.0 L 397.2 168.7 L 406.7 148.6 L 416.2 170.1 L 425.7 168.9 L 435.2 113.6 L 444.6 114.9 L 454.1 163.7 L 463.6 166.0 L 473.1 146.3 L 482.6 147.0 L 492.1 145.0 L 501.6 153.5 L 511.1 151.0 L 520.6 162.2 L 530.1 141.0 L 539.6 149.9 L 549.1 164.3 L 558.5 169.9 L 568.0 152.9 L 577.5 160.5 L 587.0 161.2 L 596.5 151.8 L 606.0 124.0"/>
+<text class="tick" x="46.0" y="244" text-anchor="middle">1</text>
+<text class="tick" x="131.4" y="244" text-anchor="middle">10</text>
+<text class="tick" x="226.3" y="244" text-anchor="middle">20</text>
+<text class="tick" x="321.3" y="244" text-anchor="middle">30</text>
+<text class="tick" x="416.2" y="244" text-anchor="middle">40</text>
+<text class="tick" x="511.1" y="244" text-anchor="middle">50</text>
+<text class="tick" x="606.0" y="244" text-anchor="middle">60</text>
+
+<text class="axl" x="310" y="258" text-anchor="middle">antal träningsobservationer</text>
+<line id="cx2" class="cross" y1="16" y2="226"/>
+<rect class="hit" id="hit2" x="46" y="16" width="560" height="210"/>
+</svg><div class="tip" id="tip2"></div></div>
+<p class="note">Lägre är bättre. Att väga samman alla kontextlängder i stället för att
+lita blint på den längsta sänker perplexiteten från cirka 3,3 till 2,3 utan att kosta
+träffsäkerhet. De streckade linjerna markerar BIC-splittar: när antalsmodellen delar en
+komponent späds statistiken ut och prediktionen faller tillfälligt.</p>
+
+<details><summary>Tabellvy</summary>
+<table><thead><tr><th>obs</th><th>nivå</th><th>symbol</th><th>log p</th>
+<th>ppl interp</th><th>ppl hård</th><th>djup</th><th>kontexter</th></tr></thead>
+<tbody><tr><td>1</td><td>0.734</td><td>0.734</td><td>-0.552</td><td>1.74</td><td>3.03</td><td>3.43</td><td>19</td></tr>
+<tr><td>2</td><td>0.700</td><td>0.700</td><td>-0.565</td><td>1.77</td><td>2.22</td><td>3.69</td><td>22</td></tr>
+<tr><td>3</td><td>0.860</td><td>0.546</td><td>-1.057</td><td>2.94</td><td>6.59</td><td>2.92</td><td>54</td></tr>
+<tr><td>4</td><td>0.873</td><td>0.460</td><td>-1.171</td><td>3.30</td><td>7.36</td><td>2.78</td><td>57</td></tr>
+<tr><td>5</td><td>0.877</td><td>0.458</td><td>-1.160</td><td>3.23</td><td>7.73</td><td>2.81</td><td>62</td></tr>
+<tr><td>6</td><td>0.901</td><td>0.569</td><td>-1.149</td><td>3.21</td><td>8.56</td><td>3.08</td><td>69</td></tr>
+<tr><td>7</td><td>0.901</td><td>0.598</td><td>-1.135</td><td>3.16</td><td>7.78</td><td>3.09</td><td>72</td></tr>
+<tr><td>8</td><td>0.922</td><td>0.597</td><td>-1.038</td><td>2.86</td><td>5.72</td><td>3.16</td><td>74</td></tr>
+<tr><td>9</td><td>0.888</td><td>0.569</td><td>-1.058</td><td>2.95</td><td>7.55</td><td>3.22</td><td>77</td></tr>
+<tr><td>10</td><td>0.872</td><td>0.594</td><td>-1.038</td><td>2.88</td><td>8.06</td><td>3.25</td><td>83</td></tr>
+<tr><td>11</td><td>0.913</td><td>0.650</td><td>-0.908</td><td>2.56</td><td>5.79</td><td>3.39</td><td>83</td></tr>
+<tr><td>12</td><td>0.936</td><td>0.660</td><td>-0.822</td><td>2.33</td><td>4.48</td><td>3.49</td><td>88</td></tr>
+<tr><td>13</td><td>0.929</td><td>0.630</td><td>-0.834</td><td>2.35</td><td>4.77</td><td>3.52</td><td>91</td></tr>
+<tr><td>14</td><td>0.929</td><td>0.633</td><td>-0.821</td><td>2.32</td><td>4.49</td><td>3.54</td><td>93</td></tr>
+<tr><td>15</td><td>0.928</td><td>0.644</td><td>-0.807</td><td>2.29</td><td>4.29</td><td>3.54</td><td>93</td></tr>
+<tr><td>16</td><td>0.940</td><td>0.677</td><td>-0.807</td><td>2.30</td><td>4.25</td><td>3.57</td><td>95</td></tr>
+<tr><td>17</td><td>0.935</td><td>0.677</td><td>-0.848</td><td>2.41</td><td>4.68</td><td>3.54</td><td>95</td></tr>
+<tr><td>18</td><td>0.934</td><td>0.675</td><td>-0.843</td><td>2.39</td><td>4.62</td><td>3.56</td><td>96</td></tr>
+<tr><td>19</td><td>0.908</td><td>0.616</td><td>-0.870</td><td>2.45</td><td>5.21</td><td>3.55</td><td>98</td></tr>
+<tr><td>20</td><td>0.928</td><td>0.653</td><td>-0.815</td><td>2.30</td><td>4.24</td><td>3.59</td><td>98</td></tr>
+<tr><td>21</td><td>0.928</td><td>0.654</td><td>-0.809</td><td>2.28</td><td>4.14</td><td>3.59</td><td>100</td></tr>
+<tr><td>22</td><td>0.907</td><td>0.639</td><td>-0.917</td><td>2.57</td><td>5.69</td><td>3.53</td><td>100</td></tr>
+<tr><td>23</td><td>0.934</td><td>0.659</td><td>-0.828</td><td>2.34</td><td>4.31</td><td>3.58</td><td>102</td></tr>
+<tr><td>24</td><td>0.928</td><td>0.654</td><td>-0.807</td><td>2.28</td><td>4.15</td><td>3.61</td><td>103</td></tr>
+<tr><td>25</td><td>0.928</td><td>0.643</td><td>-0.811</td><td>2.29</td><td>4.25</td><td>3.61</td><td>109</td></tr>
+<tr><td>26</td><td>0.909</td><td>0.624</td><td>-0.873</td><td>2.46</td><td>4.64</td><td>3.60</td><td>111</td></tr>
+<tr><td>27</td><td>0.920</td><td>0.668</td><td>-0.861</td><td>2.42</td><td>4.53</td><td>3.59</td><td>111</td></tr>
+<tr><td>28</td><td>0.920</td><td>0.673</td><td>-0.860</td><td>2.43</td><td>4.53</td><td>3.59</td><td>111</td></tr>
+<tr><td>29</td><td>0.933</td><td>0.621</td><td>-0.827</td><td>2.38</td><td>4.93</td><td>3.63</td><td>114</td></tr>
+<tr><td>30</td><td>0.943</td><td>0.675</td><td>-0.804</td><td>2.28</td><td>4.02</td><td>3.63</td><td>115</td></tr>
+<tr><td>31</td><td>0.927</td><td>0.616</td><td>-0.861</td><td>2.43</td><td>4.84</td><td>3.63</td><td>115</td></tr>
+<tr><td>32</td><td>0.944</td><td>0.657</td><td>-0.805</td><td>2.28</td><td>4.04</td><td>3.64</td><td>115</td></tr>
+<tr><td>33</td><td>0.929</td><td>0.685</td><td>-0.839</td><td>2.37</td><td>4.26</td><td>3.62</td><td>116</td></tr>
+<tr><td>34</td><td>0.924</td><td>0.686</td><td>-0.843</td><td>2.38</td><td>3.88</td><td>3.62</td><td>116</td></tr>
+<tr><td>35</td><td>0.945</td><td>0.705</td><td>-0.801</td><td>2.27</td><td>3.60</td><td>3.64</td><td>116</td></tr>
+<tr><td>36</td><td>0.947</td><td>0.718</td><td>-0.784</td><td>2.22</td><td>3.27</td><td>3.66</td><td>118</td></tr>
+<tr><td>37</td><td>0.935</td><td>0.669</td><td>-0.838</td><td>2.37</td><td>4.20</td><td>3.65</td><td>118</td></tr>
+<tr><td>38</td><td>0.949</td><td>0.736</td><td>-0.775</td><td>2.21</td><td>3.18</td><td>3.63</td><td>118</td></tr>
+<tr><td>39</td><td>0.926</td><td>0.679</td><td>-0.864</td><td>2.43</td><td>3.95</td><td>3.64</td><td>118</td></tr>
+<tr><td>40</td><td>0.948</td><td>0.725</td><td>-0.751</td><td>2.16</td><td>3.13</td><td>3.67</td><td>122</td></tr>
+<tr><td>41</td><td>0.948</td><td>0.718</td><td>-0.751</td><td>2.16</td><td>3.18</td><td>3.68</td><td>122</td></tr>
+<tr><td>42</td><td>0.919</td><td>0.645</td><td>-0.892</td><td>2.53</td><td>5.28</td><td>3.67</td><td>125</td></tr>
+<tr><td>43</td><td>0.919</td><td>0.655</td><td>-0.893</td><td>2.53</td><td>5.23</td><td>3.67</td><td>125</td></tr>
+<tr><td>44</td><td>0.933</td><td>0.715</td><td>-0.795</td><td>2.28</td><td>3.37</td><td>3.65</td><td>125</td></tr>
+<tr><td>45</td><td>0.932</td><td>0.720</td><td>-0.787</td><td>2.26</td><td>3.29</td><td>3.64</td><td>127</td></tr>
+<tr><td>46</td><td>0.924</td><td>0.708</td><td>-0.852</td><td>2.42</td><td>4.04</td><td>3.60</td><td>165</td></tr>
+<tr><td>47</td><td>0.923</td><td>0.698</td><td>-0.851</td><td>2.41</td><td>4.01</td><td>3.61</td><td>165</td></tr>
+<tr><td>48</td><td>0.923</td><td>0.697</td><td>-0.859</td><td>2.43</td><td>4.08</td><td>3.62</td><td>165</td></tr>
+<tr><td>49</td><td>0.945</td><td>0.716</td><td>-0.849</td><td>2.40</td><td>3.76</td><td>3.62</td><td>165</td></tr>
+<tr><td>50</td><td>0.925</td><td>0.715</td><td>-0.854</td><td>2.42</td><td>3.86</td><td>3.62</td><td>167</td></tr>
+<tr><td>51</td><td>0.922</td><td>0.695</td><td>-0.841</td><td>2.37</td><td>3.43</td><td>3.64</td><td>167</td></tr>
+<tr><td>52</td><td>0.914</td><td>0.640</td><td>-0.893</td><td>2.51</td><td>4.24</td><td>3.63</td><td>167</td></tr>
+<tr><td>53</td><td>0.929</td><td>0.657</td><td>-0.864</td><td>2.42</td><td>3.90</td><td>3.65</td><td>167</td></tr>
+<tr><td>54</td><td>0.940</td><td>0.710</td><td>-0.838</td><td>2.37</td><td>3.35</td><td>3.64</td><td>168</td></tr>
+<tr><td>55</td><td>0.922</td><td>0.704</td><td>-0.821</td><td>2.33</td><td>3.14</td><td>3.64</td><td>168</td></tr>
+<tr><td>56</td><td>0.916</td><td>0.696</td><td>-0.862</td><td>2.44</td><td>3.78</td><td>3.65</td><td>171</td></tr>
+<tr><td>57</td><td>0.912</td><td>0.674</td><td>-0.861</td><td>2.43</td><td>3.49</td><td>3.63</td><td>171</td></tr>
+<tr><td>58</td><td>0.915</td><td>0.677</td><td>-0.861</td><td>2.43</td><td>3.47</td><td>3.63</td><td>171</td></tr>
+<tr><td>59</td><td>0.917</td><td>0.694</td><td>-0.869</td><td>2.45</td><td>3.83</td><td>3.64</td><td>171</td></tr>
+<tr><td>60</td><td>0.896</td><td>0.626</td><td>-0.944</td><td>2.64</td><td>4.88</td><td>3.65</td><td>171</td></tr></tbody></table></details>
+
+<script>
+const PTS = [{"n": 1, "va": 0.734, "sa": 0.734, "pi": 1.74, "ph": 3.03, "x": 46.0}, {"n": 2, "va": 0.7, "sa": 0.7, "pi": 1.77, "ph": 2.22, "x": 55.5}, {"n": 3, "va": 0.86, "sa": 0.546, "pi": 2.94, "ph": 6.59, "x": 65.0}, {"n": 4, "va": 0.873, "sa": 0.46, "pi": 3.3, "ph": 7.36, "x": 74.5}, {"n": 5, "va": 0.877, "sa": 0.458, "pi": 3.23, "ph": 7.73, "x": 84.0}, {"n": 6, "va": 0.901, "sa": 0.569, "pi": 3.21, "ph": 8.56, "x": 93.5}, {"n": 7, "va": 0.901, "sa": 0.598, "pi": 3.16, "ph": 7.78, "x": 102.9}, {"n": 8, "va": 0.922, "sa": 0.597, "pi": 2.86, "ph": 5.72, "x": 112.4}, {"n": 9, "va": 0.888, "sa": 0.569, "pi": 2.95, "ph": 7.55, "x": 121.9}, {"n": 10, "va": 0.872, "sa": 0.594, "pi": 2.88, "ph": 8.06, "x": 131.4}, {"n": 11, "va": 0.913, "sa": 0.65, "pi": 2.56, "ph": 5.79, "x": 140.9}, {"n": 12, "va": 0.936, "sa": 0.66, "pi": 2.33, "ph": 4.48, "x": 150.4}, {"n": 13, "va": 0.929, "sa": 0.63, "pi": 2.35, "ph": 4.77, "x": 159.9}, {"n": 14, "va": 0.929, "sa": 0.633, "pi": 2.32, "ph": 4.49, "x": 169.4}, {"n": 15, "va": 0.928, "sa": 0.644, "pi": 2.29, "ph": 4.29, "x": 178.9}, {"n": 16, "va": 0.94, "sa": 0.677, "pi": 2.3, "ph": 4.25, "x": 188.4}, {"n": 17, "va": 0.935, "sa": 0.677, "pi": 2.41, "ph": 4.68, "x": 197.9}, {"n": 18, "va": 0.934, "sa": 0.675, "pi": 2.39, "ph": 4.62, "x": 207.4}, {"n": 19, "va": 0.908, "sa": 0.616, "pi": 2.45, "ph": 5.21, "x": 216.8}, {"n": 20, "va": 0.928, "sa": 0.653, "pi": 2.3, "ph": 4.24, "x": 226.3}, {"n": 21, "va": 0.928, "sa": 0.654, "pi": 2.28, "ph": 4.14, "x": 235.8}, {"n": 22, "va": 0.907, "sa": 0.639, "pi": 2.57, "ph": 5.69, "x": 245.3}, {"n": 23, "va": 0.934, "sa": 0.659, "pi": 2.34, "ph": 4.31, "x": 254.8}, {"n": 24, "va": 0.928, "sa": 0.654, "pi": 2.28, "ph": 4.15, "x": 264.3}, {"n": 25, "va": 0.928, "sa": 0.643, "pi": 2.29, "ph": 4.25, "x": 273.8}, {"n": 26, "va": 0.909, "sa": 0.624, "pi": 2.46, "ph": 4.64, "x": 283.3}, {"n": 27, "va": 0.92, "sa": 0.668, "pi": 2.42, "ph": 4.53, "x": 292.8}, {"n": 28, "va": 0.92, "sa": 0.673, "pi": 2.43, "ph": 4.53, "x": 302.3}, {"n": 29, "va": 0.933, "sa": 0.621, "pi": 2.38, "ph": 4.93, "x": 311.8}, {"n": 30, "va": 0.943, "sa": 0.675, "pi": 2.28, "ph": 4.02, "x": 321.3}, {"n": 31, "va": 0.927, "sa": 0.616, "pi": 2.43, "ph": 4.84, "x": 330.7}, {"n": 32, "va": 0.944, "sa": 0.657, "pi": 2.28, "ph": 4.04, "x": 340.2}, {"n": 33, "va": 0.929, "sa": 0.685, "pi": 2.37, "ph": 4.26, "x": 349.7}, {"n": 34, "va": 0.924, "sa": 0.686, "pi": 2.38, "ph": 3.88, "x": 359.2}, {"n": 35, "va": 0.945, "sa": 0.705, "pi": 2.27, "ph": 3.6, "x": 368.7}, {"n": 36, "va": 0.947, "sa": 0.718, "pi": 2.22, "ph": 3.27, "x": 378.2}, {"n": 37, "va": 0.935, "sa": 0.669, "pi": 2.37, "ph": 4.2, "x": 387.7}, {"n": 38, "va": 0.949, "sa": 0.736, "pi": 2.21, "ph": 3.18, "x": 397.2}, {"n": 39, "va": 0.926, "sa": 0.679, "pi": 2.43, "ph": 3.95, "x": 406.7}, {"n": 40, "va": 0.948, "sa": 0.725, "pi": 2.16, "ph": 3.13, "x": 416.2}, {"n": 41, "va": 0.948, "sa": 0.718, "pi": 2.16, "ph": 3.18, "x": 425.7}, {"n": 42, "va": 0.919, "sa": 0.645, "pi": 2.53, "ph": 5.28, "x": 435.2}, {"n": 43, "va": 0.919, "sa": 0.655, "pi": 2.53, "ph": 5.23, "x": 444.6}, {"n": 44, "va": 0.933, "sa": 0.715, "pi": 2.28, "ph": 3.37, "x": 454.1}, {"n": 45, "va": 0.932, "sa": 0.72, "pi": 2.26, "ph": 3.29, "x": 463.6}, {"n": 46, "va": 0.924, "sa": 0.708, "pi": 2.42, "ph": 4.04, "x": 473.1}, {"n": 47, "va": 0.923, "sa": 0.698, "pi": 2.41, "ph": 4.01, "x": 482.6}, {"n": 48, "va": 0.923, "sa": 0.697, "pi": 2.43, "ph": 4.08, "x": 492.1}, {"n": 49, "va": 0.945, "sa": 0.716, "pi": 2.4, "ph": 3.76, "x": 501.6}, {"n": 50, "va": 0.925, "sa": 0.715, "pi": 2.42, "ph": 3.86, "x": 511.1}, {"n": 51, "va": 0.922, "sa": 0.695, "pi": 2.37, "ph": 3.43, "x": 520.6}, {"n": 52, "va": 0.914, "sa": 0.64, "pi": 2.51, "ph": 4.24, "x": 530.1}, {"n": 53, "va": 0.929, "sa": 0.657, "pi": 2.42, "ph": 3.9, "x": 539.6}, {"n": 54, "va": 0.94, "sa": 0.71, "pi": 2.37, "ph": 3.35, "x": 549.1}, {"n": 55, "va": 0.922, "sa": 0.704, "pi": 2.33, "ph": 3.14, "x": 558.5}, {"n": 56, "va": 0.916, "sa": 0.696, "pi": 2.44, "ph": 3.78, "x": 568.0}, {"n": 57, "va": 0.912, "sa": 0.674, "pi": 2.43, "ph": 3.49, "x": 577.5}, {"n": 58, "va": 0.915, "sa": 0.677, "pi": 2.43, "ph": 3.47, "x": 587.0}, {"n": 59, "va": 0.917, "sa": 0.694, "pi": 2.45, "ph": 3.83, "x": 596.5}, {"n": 60, "va": 0.896, "sa": 0.626, "pi": 2.64, "ph": 4.88, "x": 606.0}];
+function bind(hitId, cxId, tipId, fields) {
+  const hit=document.getElementById(hitId), cx=document.getElementById(cxId), tip=document.getElementById(tipId);
+  const svg=hit.ownerSVGElement;
+  hit.addEventListener('mousemove', e=>{
+    const r=svg.getBoundingClientRect();
+    const vx=(e.clientX-r.left)/r.width*620;
+    let best=PTS[0];
+    for(const p of PTS) if(Math.abs(p.x-vx)<Math.abs(best.x-vx)) best=p;
+    cx.setAttribute('x1',best.x); cx.setAttribute('x2',best.x); cx.style.opacity=.5;
+    tip.innerHTML='<b>'+best.n+' observationer</b><br>'+fields.map(f=>f[0]+': '+best[f[1]]).join('<br>');
+    tip.style.opacity=1;
+    tip.style.left=Math.min(best.x/620*r.width+12, r.width-140)+'px';
+    tip.style.top='14px';
+  });
+  hit.addEventListener('mouseleave',()=>{cx.style.opacity=0; tip.style.opacity=0;});
+}
+bind('hit1','cx1','tip1',[['rätt nivå','va'],['rätt symbol','sa']]);
+bind('hit2','cx2','tip2',[['interpolerad','pi'],['hård back-off','ph']]);
+</script>
+</div></body></html>
